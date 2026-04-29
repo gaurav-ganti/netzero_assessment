@@ -1,3 +1,10 @@
+# Files
+*.csv
+*.xlsx
+
+# Folders
+analysis/misc/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
