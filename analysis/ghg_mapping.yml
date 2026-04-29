@@ -1,0 +1,25 @@
+- Emissions|CO2:
+  - Emissions|CO2|Fossil
+  - Emissions|CO2|Biosphere
+- Emissions|Kyoto Gases [AR6-GWP100]:
+  - Emissions|CO2|Fossil
+  - Emissions|CO2|Biosphere
+  - Emissions|CH4
+  - Emissions|HFC125
+  - Emissions|HFC134a
+  - Emissions|HFC143a
+  - Emissions|HFC227ea
+  - Emissions|HFC23
+  - Emissions|HFC32
+  - Emissions|HFC4310mee
+  - Emissions|N2O
+  - Emissions|SF6
+  - Emissions|C2F6
+  - Emissions|CF4
+  - Emissions|HFC245fa
+  - Emissions|C3F8
+  - Emissions|cC4F8
+  - Emissions|HFC236fa
+  - Emissions|HFC152a
+  - Emissions|HFC365mfc
+  - Emissions|NF3
