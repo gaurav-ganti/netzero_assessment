@@ -394,3 +394,45 @@ def extend_flatline_after_netzero(
         compiled_emissions.rename(scenario=scenario_mapping, inplace=True)
 
     return compiled_emissions
+
+
+def sanitize_label(label):
+    """
+    Sanitize a label by replacing whitespace and backslashes with double underscores.
+
+    This function is used to create filesystem-safe filenames from scenario/model names
+    that may contain spaces or backslashes.
+
+    Parameters
+    ----------
+    label : str
+        The label to sanitize (e.g., model name, scenario name)
+
+    Returns
+    -------
+    str
+        Sanitized label with whitespace and backslashes replaced by '__'
+
+    Raises
+    ------
+    TypeError
+        If label is not a string
+
+    Examples
+    --------
+    >>> sanitize_label("SSP2 4.5")
+    'SSP2__4.5'
+    >>> sanitize_label("REMIND\\IMAGE")
+    'REMIND__IMAGE'
+    >>> sanitize_label("AIM/CGE V2.2")
+    'AIM/CGE__V2.2'
+    """
+    if not isinstance(label, str):
+        raise TypeError(f"label must be a string, got {type(label).__name__}")
+
+    # Replace all whitespace characters with '__'
+    sanitized = label.replace(" ", "__").replace("\t", "__").replace("\n", "__").replace("\r", "__")
+    # Replace backslashes with '__'
+    sanitized = sanitized.replace("/", "__")
+
+    return sanitized
