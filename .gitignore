@@ -1,6 +1,7 @@
 # Files
 *.csv
 *.xlsx
+*.log
 
 # Folders
 analysis/misc/
