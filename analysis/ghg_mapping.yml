@@ -2,7 +2,8 @@ Emissions|CO2:
 - Emissions|CO2|Fossil
 - Emissions|CO2|Biosphere
 Emissions|Kyoto Gases [AR6-GWP100]:
-- Emissions|CO2
+- Emissions|CO2|Fossil
+- Emissions|CO2|Biosphere
 - Emissions|CH4
 - Emissions|HFC125
 - Emissions|HFC134a
