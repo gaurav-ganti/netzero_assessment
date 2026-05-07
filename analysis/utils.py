@@ -1,3 +1,4 @@
+import numpy as np
 import pyam
 import scmdata
 import silicone.time_projectors as timeproj
@@ -394,6 +395,250 @@ def extend_flatline_after_netzero(
         compiled_emissions.rename(scenario=scenario_mapping, inplace=True)
 
     return compiled_emissions
+
+
+def get_value_at_netzero(
+    df,
+    variable,
+    netzero_meta_column,
+    output_column,
+    default_netzero_year=None,
+):
+    """
+    Extract the value of a variable at each scenario's net-zero year.
+
+    This function looks up the net-zero year for each scenario from existing metadata
+    and retrieves the value of the specified variable at that year.
+
+    Parameters
+    ----------
+    df : pyam.IamDataFrame
+        Input dataframe containing timeseries data and net-zero metadata.
+        Must have 'run_id' as part of the timeseries index.
+    variable : str
+        Name of the variable to extract values from
+    netzero_meta_column : str
+        Name of the metadata column containing net-zero years
+    output_column : str
+        Name of the column for the extracted values in the output DataFrame
+    default_netzero_year : int, optional
+        Default year to use if net-zero metadata is NaN. If None, scenarios
+        with NaN net-zero years will have NaN in the output.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame indexed by (model, scenario, run_id) with a single column
+        named `output_column` containing the extracted values
+
+    Raises
+    ------
+    TypeError
+        If df is not a pyam.IamDataFrame, or if string parameters are not strings
+    ValueError
+        If variable or netzero_meta_column doesn't exist in the dataframe
+
+    Examples
+    --------
+    >>> # Get temperature at net-zero CO2 year
+    >>> values = get_value_at_netzero(
+    ...     df,
+    ...     variable="AR6 climate diagnostics|Surface Temperature (GSAT)|50.0th Percentile",
+    ...     netzero_meta_column="year_netzero_co2",
+    ...     output_column="temperature_at_netzero",
+    ... )
+    """
+    import pandas as pd
+
+    # Validate df type
+    if not isinstance(df, pyam.IamDataFrame):
+        raise TypeError(
+            f"df must be a pyam.IamDataFrame, got {type(df).__name__}"
+        )
+
+    # Validate string parameters
+    for param_name, param_value in [
+        ("variable", variable),
+        ("netzero_meta_column", netzero_meta_column),
+        ("output_column", output_column),
+    ]:
+        if not isinstance(param_value, str):
+            raise TypeError(
+                f"{param_name} must be a string, got {type(param_value).__name__}"
+            )
+
+    # Check if netzero_meta_column exists
+    if netzero_meta_column not in df.meta.columns:
+        raise ValueError(
+            f"Metadata column '{netzero_meta_column}' not found. "
+            f"Available columns: {list(df.meta.columns)}"
+        )
+
+    # Check if variable exists
+    if variable not in df.variable:
+        available_vars = df.variable
+        raise ValueError(
+            f"Variable '{variable}' not found in dataframe. "
+            f"Available variables: {list(available_vars)[:10]}"
+            + ("..." if len(available_vars) > 10 else "")
+        )
+
+    # Get timeseries for the variable
+    df_timeseries = df.filter(variable=variable).timeseries()
+
+    # Check if run_id is in the index
+    if "run_id" not in df_timeseries.index.names:
+        raise ValueError(
+            f"'run_id' not found in timeseries index. "
+            f"Available index levels: {list(df_timeseries.index.names)}"
+        )
+
+    # Get net-zero years from metadata
+    netzero_years = df.meta[netzero_meta_column].copy()
+
+    # Apply default if provided
+    if default_netzero_year is not None:
+        netzero_years = netzero_years.fillna(default_netzero_year)
+
+    # Extract value at net-zero year for each scenario
+    def get_value_at_year(row):
+        """Extract value at the net-zero year for this scenario."""
+        index = (row.name[0], row.name[1])  # (model, scenario)
+        nz_year = netzero_years.get(index)
+
+        if nz_year is None or (isinstance(nz_year, float) and np.isnan(nz_year)):
+            return np.nan
+
+        nz_year = int(nz_year)
+
+        if nz_year in row.index:
+            return row[nz_year]
+        else:
+            return np.nan
+
+    values_at_netzero = df_timeseries.apply(get_value_at_year, axis=1)
+
+    # Build result DataFrame with (model, scenario, run_id) index
+    result_df = pd.DataFrame(
+        {
+            "model": values_at_netzero.index.get_level_values("model"),
+            "scenario": values_at_netzero.index.get_level_values("scenario"),
+            "run_id": values_at_netzero.index.get_level_values("run_id"),
+            output_column: values_at_netzero.values,
+        }
+    ).set_index(["model", "scenario", "run_id"])
+
+    return result_df
+
+
+def get_value_at_year(
+    df,
+    variable,
+    year,
+    output_column,
+):
+    """
+    Extract the value of a variable at a specific year.
+
+    Parameters
+    ----------
+    df : pyam.IamDataFrame
+        Input dataframe containing timeseries data.
+        Must have 'run_id' as part of the timeseries index.
+    variable : str
+        Name of the variable to extract values from
+    year : int
+        Year to extract values at
+    output_column : str
+        Name of the column for the extracted values in the output DataFrame
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame indexed by (model, scenario, run_id) with a single column
+        named `output_column` containing the extracted values
+
+    Raises
+    ------
+    TypeError
+        If df is not a pyam.IamDataFrame, or if string parameters are not strings
+    ValueError
+        If variable doesn't exist in the dataframe or run_id not in index
+
+    Examples
+    --------
+    >>> # Get temperature in 2100
+    >>> values = get_value_at_year(
+    ...     df,
+    ...     variable="AR6 climate diagnostics|Surface Temperature (GSAT)|50.0th Percentile",
+    ...     year=2100,
+    ...     output_column="temperature_2100",
+    ... )
+    """
+    import pandas as pd
+
+    # Validate df type
+    if not isinstance(df, pyam.IamDataFrame):
+        raise TypeError(
+            f"df must be a pyam.IamDataFrame, got {type(df).__name__}"
+        )
+
+    # Validate string parameters
+    for param_name, param_value in [
+        ("variable", variable),
+        ("output_column", output_column),
+    ]:
+        if not isinstance(param_value, str):
+            raise TypeError(
+                f"{param_name} must be a string, got {type(param_value).__name__}"
+            )
+
+    # Validate year
+    if not isinstance(year, int):
+        raise TypeError(
+            f"year must be an int, got {type(year).__name__}"
+        )
+
+    # Check if variable exists
+    if variable not in df.variable:
+        available_vars = df.variable
+        raise ValueError(
+            f"Variable '{variable}' not found in dataframe. "
+            f"Available variables: {list(available_vars)[:10]}"
+            + ("..." if len(available_vars) > 10 else "")
+        )
+
+    # Get timeseries for the variable
+    df_timeseries = df.filter(variable=variable).timeseries()
+
+    # Check if run_id is in the index
+    if "run_id" not in df_timeseries.index.names:
+        raise ValueError(
+            f"'run_id' not found in timeseries index. "
+            f"Available index levels: {list(df_timeseries.index.names)}"
+        )
+
+    # Extract value at the specified year
+    if year in df_timeseries.columns:
+        values_at_year = df_timeseries[year]
+    else:
+        raise ValueError(
+            f"Year {year} not found in timeseries. "
+            f"Available years: {list(df_timeseries.columns)[:10]}"
+            + ("..." if len(df_timeseries.columns) > 10 else "")
+        )
+
+    # Build result DataFrame with (model, scenario, run_id) index
+    result_df = pd.DataFrame(
+        {
+            "model": values_at_year.index.get_level_values("model"),
+            "scenario": values_at_year.index.get_level_values("scenario"),
+            "run_id": values_at_year.index.get_level_values("run_id"),
+            output_column: values_at_year.values,
+        }
+    ).set_index(["model", "scenario", "run_id"])
+
+    return result_df
 
 
 def sanitize_label(label):
