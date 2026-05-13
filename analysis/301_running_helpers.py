@@ -27,22 +27,36 @@ Note:
 import warnings
 warnings.filterwarnings("ignore")
 
-import papermill as pm
-import pandas as pd
-import sys
-
-import pathlib
-import time
-import os
-
-from tqdm import tqdm
-from itertools import islice
 import concurrent.futures
-
-import logging
 import datetime
+import logging
+import os
+import pathlib
+import sys
+import time
+from itertools import islice
+
+import dotenv
+import pandas as pd
+import papermill as pm
+from tqdm import tqdm
 
 from utils import sanitize_label
+
+# Load environment variables
+dotenv.load_dotenv()
+
+# Set up output folder
+OUTPUT_FOLDER = pathlib.Path(os.environ["OUTPUT_FOLDER"])
+OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+
+# Set up papermill output folder
+PAPERMILL_OUTPUT_FOLDER = OUTPUT_FOLDER / "papermill_output"
+PAPERMILL_OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+
+# Set up logging folder
+LOGGING_FOLDER = OUTPUT_FOLDER / "logging"
+LOGGING_FOLDER.mkdir(parents=True, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +71,8 @@ def setup_logging():
     logging.basicConfig(level=logging.INFO)
 
     SESSION_DATETIME = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
-    log_dir = pathlib.Path("logging")
-    log_dir.mkdir(exist_ok=True)
 
-    fh = logging.FileHandler(log_dir / f'{SESSION_DATETIME}_301_runs.log')
+    fh = logging.FileHandler(LOGGING_FOLDER / f'{SESSION_DATETIME}_301_runs.log')
     fh.setLevel(logging.INFO)
     logger.addHandler(fh)
 
@@ -70,7 +82,7 @@ def save_manifest():
     if not MANIFEST_ENTRIES:
         return
 
-    manifest_dir = pathlib.Path("output/individual_runs/manifests")
+    manifest_dir = OUTPUT_FOLDER / "individual_runs/manifests"
     manifest_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_path = manifest_dir / f'{SESSION_DATETIME}_manifest.csv'
@@ -128,7 +140,7 @@ def run_papermill_notebook(config):
     OUTPUT_SCENARIO = sanitize_label(config['SCENARIO'])
     pm.execute_notebook(
         pathlib.Path(current_path / "200_run_magicc.ipynb"),
-        f"papermill_output/301_{OUTPUT_MODEL}_{OUTPUT_SCENARIO}_{config["ENSEMBLE_MEMBERS"]}_{config["MAGICC_FLAG"]}.ipynb",
+        PAPERMILL_OUTPUT_FOLDER / f"301_{OUTPUT_MODEL}_{OUTPUT_SCENARIO}_{config['ENSEMBLE_MEMBERS']}_{config['MAGICC_FLAG']}.ipynb",
         parameters=config
     )
 
@@ -210,8 +222,8 @@ if __name__ == "__main__":
     logger.info(f'Starting runs at: {start_time}')
     logger.info(f'Configuration: batch_size={batch_size}, n_jobs={n_jobs}, n_processes={n_processes}')
     mod_scens = pd.read_csv(
-        #pathlib.Path("output/300_trial_batches_v0.1.csv"),
-        pathlib.Path("output/300_trial_batches_AR6WG3IMP_v0.1.csv"),
+        #OUTPUT_FOLDER / "300_trial_batches_v0.1.csv",
+        OUTPUT_FOLDER / "300_trial_batches_AR6WG3IMP_v0.1.csv",
         header=0,
         names=["idx", "model", "scenario", "ensemble", "file", "magicc_flag"]
     )

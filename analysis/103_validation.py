@@ -12,19 +12,28 @@ Outputs:
     - Plots saved to output/validation_plots/
 """
 
-import pandas as pd
-import yaml
-import matplotlib.pyplot as plt
-import numpy as np
+import os
 from pathlib import Path
 
+import dotenv
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import yaml
+
+# Load environment variables
+dotenv.load_dotenv()
+
+# Set up output folder
+OUTPUT_FOLDER = Path(os.environ["OUTPUT_FOLDER"])
+OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+
 # Configuration
-INPUT_DIR = Path("output")
 GHG_MAPPING_FILE = Path("ghg_mapping.yml")
-NETZERO_TIMINGS_FILE = INPUT_DIR / "102_netzero_timings.csv"
-CO2_EXTENDED_FILE = INPUT_DIR / "102_netzero_co2_extended.csv"
-KYOTO_EXTENDED_FILE = INPUT_DIR / "102_netzero_kyoto_extended.csv"
-PLOT_OUTPUT_DIR = INPUT_DIR / "validation_plots"
+NETZERO_TIMINGS_FILE = OUTPUT_FOLDER / "102_netzero_timings.csv"
+CO2_EXTENDED_FILE = OUTPUT_FOLDER / "102_netzero_co2_extended.csv"
+KYOTO_EXTENDED_FILE = OUTPUT_FOLDER / "102_netzero_kyoto_extended.csv"
+PLOT_OUTPUT_DIR = OUTPUT_FOLDER / "validation_plots"
 
 # Number of sample scenarios to plot for each aggregate
 N_SAMPLE_PLOTS = 3
