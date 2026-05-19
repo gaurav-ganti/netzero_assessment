@@ -90,6 +90,62 @@ def save_manifest():
     manifest_df.to_csv(manifest_path, index=False)
     logger.info(f"Manifest saved: {manifest_path}")
 
+
+def check_failed_runs(input_df):
+    """
+    Cross-reference completed runs against input to identify failures.
+
+    Args:
+        input_df: DataFrame with the original input scenarios
+
+    Returns:
+        DataFrame of failed runs (empty if all succeeded)
+    """
+    if not MANIFEST_ENTRIES:
+        logger.warning("No manifest entries found - all runs may have failed")
+        failed_df = input_df.copy()
+    else:
+        # Create sets for comparison using (model, scenario, magicc_flag) as key
+        completed = {
+            (entry["model"], entry["scenario"], entry["magicc_flag"])
+            for entry in MANIFEST_ENTRIES
+        }
+
+        # Find runs that were in input but not in completed manifest
+        failed_runs = []
+        for row in input_df.itertuples():
+            key = (row.model, row.scenario, row.magicc_flag)
+            if key not in completed:
+                failed_runs.append({
+                    "MODEL": row.model,
+                    "SCENARIO": row.scenario,
+                    "ENSEMBLE_MEMBERS": int(row.ensemble),
+                    "FILE": row.file,
+                    "MAGICC_FLAG": row.magicc_flag
+                })
+
+        failed_df = pd.DataFrame(failed_runs)
+
+    n_failed = len(failed_df)
+    n_total = len(input_df)
+    n_completed = n_total - n_failed
+
+    logger.info(f"Run completion summary: {n_completed}/{n_total} succeeded, {n_failed} failed")
+
+    if n_failed > 0:
+        logger.warning(f"Failed runs ({n_failed}):")
+        for _, row in failed_df.iterrows():
+            logger.warning(f"  - {row['MODEL']} | {row['SCENARIO']} | {row['MAGICC_FLAG']}")
+
+        # Save failed runs to CSV for re-running
+        failed_output_path = OUTPUT_FOLDER / f"301_failed_runs_{SESSION_DATETIME}.csv"
+        failed_df.to_csv(failed_output_path, index=False)
+        logger.info(f"Failed runs saved to: {failed_output_path}")
+    else:
+        logger.info("All runs completed successfully!")
+
+    return failed_df
+
 current_path=pathlib.Path().resolve()
 
 def construct_and_batch_configs(input_data, batch_size, n_processes):
@@ -246,3 +302,4 @@ if __name__ == "__main__":
     runs_finish = datetime.datetime.now().isoformat()
     logger.info(f"Completed runs at: {runs_finish}")
     save_manifest()
+    check_failed_runs(mod_scens)
