@@ -60,9 +60,10 @@ def _process_single_file(args):
             "scenario": scenario,
             "magicc_flag": magicc_flag,
             "run_id": run_id,
-            "gsat_peak": round(gsat_peak, 2),
+            "gsat_peak": round(gsat_peak, 3),
             "gsat_peak_year": gsat_peak_year,
-            "gsat_2100": round(float(gsat_2100), 2),
+            "gsat_2100": round(float(gsat_2100), 3),
+            "delta_warming": round(gsat_peak - float(gsat_2100), 3),
         })
 
     return metrics
@@ -98,6 +99,7 @@ def compile_gsat_metrics_from_manifest(
         - gsat_peak: Maximum GSAT value across all years
         - gsat_peak_year: Year of peak GSAT
         - gsat_2100: GSAT value at year 2100
+        - delta_warming: Difference between peak and 2100 warming (gsat_peak - gsat_2100)
     """
     # Load environment variables
     dotenv.load_dotenv()
