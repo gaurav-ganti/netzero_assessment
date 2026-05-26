@@ -86,9 +86,12 @@ dependencies = [
     { name = "ipykernel" },
     { name = "jupyter" },
     { name = "lab" },
+    { name = "matplotlib" },
+    { name = "openscm-runner" },
     { name = "pandas-indexing" },
     { name = "papermill" },
     { name = "pyam-iamc" },
+    { name = "pymagicc" },
     { name = "pytest" },
     { name = "python-dotenv" },
     { name = "scmdata" },
@@ -102,9 +105,12 @@ requires-dist = [
     { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "lab", specifier = ">=8.9" },
+    { name = "matplotlib", specifier = ">=3.10.9" },
+    { name = "openscm-runner", specifier = ">=0.13.0" },
     { name = "pandas-indexing", specifier = ">=0.6.3" },
     { name = "papermill", specifier = ">=2.7.0" },
     { name = "pyam-iamc", specifier = "==3.3.0" },
+    { name = "pymagicc", specifier = ">=2.1.5" },
     { name = "pytest", specifier = ">=9.0.3" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "scmdata", specifier = ">=0.18.0" },
@@ -541,6 +547,16 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cc/28/c14e053b6762b1044f34a13aab6859bbf40456d37d23aa286ac24cfd9a5d/executing-2.2.1.tar.gz", hash = "sha256:3632cc370565f6648cc328b32435bd120a1e4ebb20c77e3fdde9a13cd1e533c4", size = 1129488, upload-time = "2025-09-01T09:48:10.866Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/ea/53f2148663b321f21b5a606bd5f191517cf40b7072c0497d3c92c4a13b1e/executing-2.2.1-py2.py3-none-any.whl", hash = "sha256:760643d3452b4d777d295bb167ccc74c64a81df23fb5e08eff250c425a4b2017", size = 28317, upload-time = "2025-09-01T09:48:08.5Z" },
+]
+
+[[package]]
+name = "f90nml"
+version = "1.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/54/39/5bef20ee2868924029b2d34523839798cc8e48183ca57d9704ae6ef92da6/f90nml-1.5.tar.gz", hash = "sha256:d5585f0051234c742f7515c4b1f8484f8f628a71c4e31f2602357089dcc05fc1", size = 70959, upload-time = "2025-10-07T15:07:14.365Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a9/ee/39fc4b67a7ae5ba91d6da18a1b66cbdf6b2f4f88e3a26ca36823f3482dd3/f90nml-1.5-py2.py3-none-any.whl", hash = "sha256:38bbbdfe81eb7ac62e924021c4df6bb5cf4846e2f8ad79bfecb0fd654250180a", size = 51971, upload-time = "2025-10-07T15:07:13.332Z" },
+    { url = "https://files.pythonhosted.org/packages/21/f2/4454eefc15cc326b46530d230c58cc0bb91a1e9797f2842b2a1720cbb233/f90nml-1.5.0-py2.py3-none-any.whl", hash = "sha256:bdf616dbe7e83619feb86d54358fb8d97038133bfd8f9ba9a01eeca5dc4691a7", size = 51994, upload-time = "2025-10-07T15:25:09.064Z" },
 ]
 
 [[package]]
@@ -1676,6 +1692,21 @@ wheels = [
 ]
 
 [[package]]
+name = "openscm-runner"
+version = "0.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "openscm-units" },
+    { name = "python-dotenv" },
+    { name = "scmdata" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/91/ec/7db824e63c813a45b43c30235c5d7bc14030085f59fa86b50ae3d1a2525a/openscm_runner-0.13.0.tar.gz", hash = "sha256:aa1887d9356c11ed4b6ae8f502440b40d17b82220a79949e170daa39d4fe8f7e", size = 1716745, upload-time = "2024-01-30T13:57:39.763Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/86/76/98b9b37a2117ea8c4daab698b73657115c5fee8a01600923155c60df504b/openscm_runner-0.13.0-py3-none-any.whl", hash = "sha256:5ffb5f311942d70961b1aa5f68b0a0187b1f7b064b1744ed3bd55bb1b25bc587", size = 1734072, upload-time = "2024-01-30T13:57:37.662Z" },
+]
+
+[[package]]
 name = "openscm-units"
 version = "0.6.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1737,6 +1768,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/1e/1bac1a839d12e6a82ec6cb40cda2edde64a2013a66963293696bbf31fbbb/pandas-2.3.3-cp314-cp314t-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2e3ebdb170b5ef78f19bfb71b0dc5dc58775032361fa188e814959b74d726dd5", size = 12121582, upload-time = "2025-09-29T23:30:43.391Z" },
     { url = "https://files.pythonhosted.org/packages/44/91/483de934193e12a3b1d6ae7c8645d083ff88dec75f46e827562f1e4b4da6/pandas-2.3.3-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:d051c0e065b94b7a3cea50eb1ec32e912cd96dba41647eb24104b6c6c14c5788", size = 12699963, upload-time = "2025-09-29T23:31:10.009Z" },
     { url = "https://files.pythonhosted.org/packages/70/44/5191d2e4026f86a2a109053e194d3ba7a31a2d10a9c2348368c63ed4e85a/pandas-2.3.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:3869faf4bd07b3b66a9f462417d0ca3a9df29a9f6abd5d0d0dbab15dac7abe87", size = 13202175, upload-time = "2025-09-29T23:31:59.173Z" },
+]
+
+[[package]]
+name = "pandas-datapackage-reader"
+version = "0.18.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pandas" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/84/f3/0437587d461e64090dc1244c1b9c318353725249d292e9636ea5e1e9ca61/pandas-datapackage-reader-0.18.0.tar.gz", hash = "sha256:ced0bb44a9a703a67a956e3b0314238d48726b09ed9ae3ce140344561f900902", size = 22649, upload-time = "2021-03-17T21:10:26.655Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b8/de/cfe7ef4af7badf889f95026634abd0b4c858dca61a6ecd9f7c281b55edb1/pandas_datapackage_reader-0.18.0-py2.py3-none-any.whl", hash = "sha256:a4660b06f533ccc35eb2f9f7cefe52b9abb7da82f7e66ad5dc52ae1c85d13b1f", size = 5539, upload-time = "2021-03-17T21:10:24.816Z" },
 ]
 
 [[package]]
@@ -2201,6 +2245,23 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c2/27/a3b6e5bf6ff856d2509292e95c8f57f0df7017cf5394921fc4e4ef40308a/pyjwt-2.12.1.tar.gz", hash = "sha256:c74a7a2adf861c04d002db713dd85f84beb242228e671280bf709d765b03672b", size = 102564, upload-time = "2026-03-13T19:27:37.25Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/7a/8dd906bd22e79e47397a61742927f6747fe93242ef86645ee9092e610244/pyjwt-2.12.1-py3-none-any.whl", hash = "sha256:28ca37c070cad8ba8cd9790cd940535d40274d22f80ab87f3ac6a713e6e8454c", size = 29726, upload-time = "2026-03-13T19:27:35.677Z" },
+]
+
+[[package]]
+name = "pymagicc"
+version = "2.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "f90nml" },
+    { name = "pandas" },
+    { name = "pandas-datapackage-reader" },
+    { name = "pyyaml" },
+    { name = "scmdata" },
+    { name = "versioneer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ff/9a/4cba940317707fdf653c9a51a9819d9c3420bd8d62565a163ba890b9ec1f/pymagicc-2.1.5.tar.gz", hash = "sha256:689359bf39f40cf3e7f6ed7ef411b0b26e40e79308839a5ee15cb2575e760434", size = 12969302, upload-time = "2024-03-01T16:26:02.646Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/b6/1e16978c50c74bbb72f77ca1cee1f5e80fb9c4295e12bc064adaa39e5f5e/pymagicc-2.1.5-py2.py3-none-any.whl", hash = "sha256:ba3dcc4e8904edbb30f0a58875fb1fbd66b5b6dd76ca31ba8ad7f21fc740e8b3", size = 1425359, upload-time = "2024-03-01T16:25:44.628Z" },
 ]
 
 [[package]]
@@ -2975,6 +3036,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+]
+
+[[package]]
+name = "versioneer"
+version = "0.29"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/32/d7/854e45d2b03e1a8ee2aa6429dd396d002ce71e5d88b77551b2fb249cb382/versioneer-0.29.tar.gz", hash = "sha256:5ab283b9857211d61b53318b7c792cf68e798e765ee17c27ade9f6c924235731", size = 75141, upload-time = "2023-07-07T15:09:28.131Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b0/79/f0f1ca286b78f6f33c521a36b5cbd5bd697c0d66217d8856f443aeb9dd77/versioneer-0.29-py3-none-any.whl", hash = "sha256:0f1a137bb5d6811e96a79bb0486798aeae9b9c6efc24b389659cebb0ee396cb9", size = 46785, upload-time = "2023-07-07T15:09:26.545Z" },
 ]
 
 [[package]]
