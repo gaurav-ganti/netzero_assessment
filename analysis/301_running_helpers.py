@@ -279,7 +279,8 @@ if __name__ == "__main__":
     logger.info(f'Configuration: batch_size={batch_size}, n_jobs={n_jobs}, n_processes={n_processes}')
     mod_scens = pd.read_csv(
         #OUTPUT_FOLDER / "300_trial_batches_v0.1.csv",
-        OUTPUT_FOLDER / "300_trial_batches_AR6WG3IMP_v0.1.csv",
+      #  OUTPUT_FOLDER / "300_trial_batches_AR6WG3IMP_v0.3.csv",
+        OUTPUT_FOLDER / "300_all_batches_v0.3.csv",
         header=0,
         names=["idx", "model", "scenario", "ensemble", "file", "magicc_flag"]
     )
