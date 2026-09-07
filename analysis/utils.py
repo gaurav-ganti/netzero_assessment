@@ -641,6 +641,54 @@ def get_value_at_year(
     return result_df
 
 
+def write_magicc_extra_rf_file(path, years, values, description, source_name="utils.py"):
+    """Write `values` at `years` as a MAGICC FILE_EXTRA_RF-compatible input file.
+
+    Used to drive a MAGICC run with `rf_total_runmodus = "QEXTRA"` / `rf_extra_read = 1`
+    from an externally-supplied total forcing series (e.g. a custom sum of individual
+    species' Effective Radiative Forcing outputs from another run), rather than one of
+    MAGICC's built-in runmodus aggregates.
+    """
+    header_lines = [
+        "---- HEADER ----",
+        "",
+        description,
+        "",
+        "---- METADATA ----",
+        "",
+        f"source: {source_name}",
+        "",
+    ]
+    spec_lines = [
+        "&THISFILE_SPECIFICATIONS",
+        "    THISFILE_DATACOLUMNS = 1",
+        f"    THISFILE_DATAROWS = {len(years)}",
+        f"    THISFILE_FIRSTYEAR = {years[0]}",
+        f"    THISFILE_LASTYEAR = {years[-1]}",
+        "    THISFILE_ANNUALSTEPS = 1",
+        "    THISFILE_UNITS = 'Wpermsuper2'",
+        "    THISFILE_DATTYPE = 'NOTUSED'",
+        "    THISFILE_REGIONMODE = 'FOURBOX'",
+        "    THISFILE_FIRSTDATAROW = PLACEHOLDER",
+        "/",
+        "",
+    ]
+    table_header = [
+        "   VARIABLE            EXTRA_RF",
+        "       TODO                 SET",
+        "      UNITS         Wpermsuper2",
+        "      YEARS               WORLD",
+    ]
+    first_data_row = len(header_lines) + len(spec_lines) + len(table_header) + 1
+    spec_lines = [line.replace("PLACEHOLDER", str(first_data_row)) for line in spec_lines]
+
+    lines = [*header_lines, *spec_lines, *table_header]
+    lines += [f"      {year:6d}    {value:12.6e}" for year, value in zip(years, values)]
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n")
+
+
 def sanitize_label(label):
     """
     Sanitize a label by replacing whitespace and backslashes with double underscores.

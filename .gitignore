@@ -228,3 +228,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local input data / paper drafts (not tracked)
+inputs/
+
+# Working notes / reasoning logs (not for the paper repo)
+notes/
