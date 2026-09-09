@@ -1,0 +1,53 @@
+#!/bin/bash
+#SBATCH --job-name=magicc_run
+#SBATCH --partition=generic
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=128G
+#SBATCH --time=2-00:00:00
+#SBATCH --output=logging/slurm_%A_%a.out
+#SBATCH --error=logging/slurm_%A_%a.err
+#
+# Runs 302_running_helpers.py as a SLURM array job. Each array task processes one
+# shard of the batch file produced by 300_prepare_scenarios.ipynb; sharding (which
+# rows this task covers) is auto-detected from SLURM_ARRAY_TASK_ID/_MIN/_MAX/_STEP
+# unless overridden with an explicit --num-shards/--shard-index below.
+#
+# GCCcore/13.2.0 (the cluster default) has a measurably higher MAGICC ensemble-member
+# failure rate than GCCcore/14.3.0 for reasons still under investigation (a compiler/
+# runtime-build sensitivity - see notes/ and the upstream GitLab issue); 14.3.0 is the
+# best confirmed option so far, hence pinned explicitly below rather than relying on
+# whatever the login/interactive-session default happens to be.
+#
+# Usage:
+#
+#   Small validation test (recommended before a real production run) - 4 array tasks,
+#   each covering only ~2-3 scenarios out of a forced 700-way split (the same
+#   tiny-shard trick used throughout manual smoke-testing), now via a genuine
+#   sbatch/array submission rather than an interactive srun session - this is what
+#   actually exercises module loading and n_jobs>1 concurrency in a real batch
+#   context, neither of which had been tested before:
+#
+#     sbatch --array=0-3 run_magicc.sbatch 1 4 4 --num-shards 700
+#
+#   Real production run - auto-shards the whole batch across the array size, e.g.
+#   --array=0-19 gives 20 shards of ~98 scenarios each for a ~1955-row batch:
+#
+#     sbatch --array=0-19 run_magicc.sbatch 5 4 4
+#
+# Positional args: BATCH_SIZE N_JOBS N_PROCESSES (passed straight to
+# 302_running_helpers.py - see its own module docstring for what these mean and how
+# to size them). Any additional arguments (e.g. --num-shards/--shard-index) are
+# passed straight through too.
+
+set -euo pipefail
+
+module load GCCcore/14.3.0
+
+cd "$(dirname "$0")"
+
+BATCH_SIZE="$1"
+N_JOBS="$2"
+N_PROCESSES="$3"
+shift 3
+
+uv run python 302_running_helpers.py "$BATCH_SIZE" "$N_JOBS" "$N_PROCESSES" "$@"
