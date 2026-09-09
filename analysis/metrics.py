@@ -93,16 +93,19 @@ def load_scenario_data(model, scenario, runs_pivoted, output_dir):
         # Return wide format indexed by run_id
         return raw.set_index("run_id")[year_cols].astype(float)
 
-    ts_all = load_ts("output_filename_ALL")
+    # "ANTHROPOGENIC" is this module's internal/output-facing label (kept as-is below and in
+    # extract_metrics for downstream compatibility) - "ANTHROPOGENIC" is the actual
+    # magicc_flag value the manifest pivot produces that column from.
+    ts_all = load_ts("output_filename_ANTHROPOGENIC")
     ts_co2 = load_ts("output_filename_CO2")
     ts_ghg = load_ts("output_filename_GHG")
     ts_nzco2 = load_ts("output_filename_NZCO2_CO2")
 
     if ts_all is None or ts_co2 is None or ts_ghg is None:
-        raise ValueError(f"Missing required ALL/CO2/GHG run for {model} / {scenario}")
+        raise ValueError(f"Missing required ANTHROPOGENIC/CO2/GHG run for {model} / {scenario}")
 
     results = {
-        "ALL":          ts_all,
+        "ANTHROPOGENIC":          ts_all,
         "CO2":          ts_co2,
         "GHG":          ts_ghg,
         "Non-CO2 GHG":  ts_ghg - ts_co2,
@@ -151,9 +154,9 @@ def extract_metrics(df, variables, var_short_names, year_netzero=None):
             s = wide[2100].rename(f"{short_name}|2100")
             metrics_list.append(s)
 
-        # Max across all years (ALL only)
-        if var == "Surface Temperature (GSAT)|ALL":
-            s = wide.max(axis=1).rename("GSAT|ALL|max")
+        # Max across all years (ANTHROPOGENIC only)
+        if var == "Surface Temperature (GSAT)|ANTHROPOGENIC":
+            s = wide.max(axis=1).rename("GSAT|ANTHROPOGENIC|max")
             metrics_list.append(s)
 
     if not metrics_list:
@@ -172,7 +175,7 @@ def extract_metrics(df, variables, var_short_names, year_netzero=None):
 
 # Default variable configurations
 DEFAULT_VARIABLES = [
-    "Surface Temperature (GSAT)|ALL",
+    "Surface Temperature (GSAT)|ANTHROPOGENIC",
     "Surface Temperature (GSAT)|CO2 [NZCO2]",
     "Surface Temperature (GSAT)|CO2 [Negative]",
     "Surface Temperature (GSAT)|Non-CO2 GHG",
@@ -180,7 +183,7 @@ DEFAULT_VARIABLES = [
 ]
 
 DEFAULT_VAR_SHORT_NAMES = {
-    "Surface Temperature (GSAT)|ALL": "GSAT|ALL",
+    "Surface Temperature (GSAT)|ANTHROPOGENIC": "GSAT|ANTHROPOGENIC",
     "Surface Temperature (GSAT)|CO2 [NZCO2]": "GSAT|CO2_NZCO2",
     "Surface Temperature (GSAT)|CO2 [Negative]": "GSAT|CO2_Negative",
     "Surface Temperature (GSAT)|Non-CO2 GHG": "GSAT|NonCO2_GHG",
