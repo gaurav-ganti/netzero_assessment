@@ -305,6 +305,10 @@ def parallel_process(conf_batch, n_jobs=16, front_num=3):
                 results.append(result)
                 MANIFEST_ENTRIES.extend(result)
             except Exception as e:
+                logger.error(
+                    f"FAILED: {conf['MODEL']} | {conf['SCENARIO']}: {type(e).__name__}: {e}",
+                    exc_info=True,
+                )
                 results.append(e)
 
     # Run remaining jobs in parallel
@@ -313,13 +317,18 @@ def parallel_process(conf_batch, n_jobs=16, front_num=3):
         return results
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=n_jobs) as pool:
-        futures = [pool.submit(run_papermill_notebook, conf) for conf in remaining]
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
+        future_to_conf = {pool.submit(run_papermill_notebook, conf): conf for conf in remaining}
+        for future in tqdm(concurrent.futures.as_completed(future_to_conf), total=len(future_to_conf)):
             try:
                 result = future.result()  # list of per-flag manifest entries
                 results.append(result)
                 MANIFEST_ENTRIES.extend(result)
             except Exception as e:
+                conf = future_to_conf[future]
+                logger.error(
+                    f"FAILED: {conf['MODEL']} | {conf['SCENARIO']}: {type(e).__name__}: {e}",
+                    exc_info=True,
+                )
                 results.append(e)
 
     return results
@@ -341,7 +350,17 @@ if __name__ == "__main__":
         help="Which shard (0-indexed) this invocation processes (default: 0, or "
              "auto-detected from SLURM_ARRAY_TASK_* if set)",
     )
+    parser.add_argument(
+        "--batch-file", type=str, default=None,
+        help="Override the batch CSV to use instead of the default "
+             "300_all_batches_v0.6.csv (e.g. a small retry batch containing only "
+             "specific failed rows). Path is relative to OUTPUT_FOLDER unless absolute.",
+    )
     args = parser.parse_args()
+
+    if args.batch_file is not None:
+        batch_file_path = Path(args.batch_file)
+        BATCH_FILE = batch_file_path if batch_file_path.is_absolute() else OUTPUT_FOLDER / batch_file_path
 
     slurm_shard_index, slurm_num_shards = get_shard_from_slurm_env()
     num_shards = args.num_shards if args.num_shards is not None else (slurm_num_shards or 1)
