@@ -359,7 +359,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.batch_file is not None:
-        batch_file_path = Path(args.batch_file)
+        batch_file_path = pathlib.Path(args.batch_file)
         BATCH_FILE = batch_file_path if batch_file_path.is_absolute() else OUTPUT_FOLDER / batch_file_path
 
     slurm_shard_index, slurm_num_shards = get_shard_from_slurm_env()
