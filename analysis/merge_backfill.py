@@ -3,10 +3,14 @@ Merge locally-backfilled ensemble members (see 303_run_magicc-missing.ipynb's Pa
 run on a Mac for its far lower MAGICC failure rate) into the cluster's raw
 individual_runs_raw/ output.
 
-Usage (run on the cluster, after untarring backfill_recovered.tar.gz into OUTPUT_FOLDER):
-    uv run python merge_backfill.py
+Usage (run on the cluster, after untarring the recovered-rows tarball into
+OUTPUT_FOLDER, or any other directory of recovered-row CSVs):
+    uv run python merge_backfill.py [recovered_dir]
+
+recovered_dir defaults to OUTPUT_FOLDER/backfill_recovered if not given.
 """
 import os
+import sys
 from pathlib import Path
 
 import dotenv
@@ -15,7 +19,7 @@ import pandas as pd
 dotenv.load_dotenv()
 OUTPUT_FOLDER = Path(os.environ["OUTPUT_FOLDER"])
 
-recovered_dir = OUTPUT_FOLDER / "backfill_recovered"
+recovered_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else OUTPUT_FOLDER / "backfill_recovered"
 raw_dir = OUTPUT_FOLDER / "individual_runs_raw"
 
 recovered_files = sorted(recovered_dir.glob("*.csv"))
