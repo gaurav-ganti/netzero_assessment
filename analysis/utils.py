@@ -231,6 +231,221 @@ def _process_single_scenario(
         return pyam.concat([scenario_data_to_nz, projected_emissions])
 
 
+def _process_single_scenario_co2_balanced(
+    model,
+    scenario,
+    fossil_emissions,
+    biosphere_emissions,
+    nz_year,
+    start_year,
+    end_year,
+):
+    """
+    Helper function to process a single scenario's CO2 net-zero extension.
+
+    Flat-lines Biosphere CO2 at its own value from the net-zero year onward (same
+    mechanic as `_process_single_scenario`), then sets Fossil CO2 to exactly balance
+    it (Fossil = -Biosphere) for every year from the net-zero year through end_year -
+    rather than independently flat-lining both constituents at their own actual
+    values, which generally leaves a persistent nonzero (often substantially
+    net-negative) total, since the net-zero year is only "the first year the total is
+    at or below zero", not a true interpolated zero-crossing instant.
+
+    Parameters
+    ----------
+    model : str
+        Model name
+    scenario : str
+        Scenario name
+    fossil_emissions : pyam.IamDataFrame
+        IamDataFrame of Fossil CO2 emissions (all scenarios)
+    biosphere_emissions : pyam.IamDataFrame
+        IamDataFrame of Biosphere CO2 emissions (all scenarios)
+    nz_year : int
+        Net-zero year for this scenario
+    start_year : int
+        Starting year for output
+    end_year : int
+        Ending year for output
+
+    Returns
+    -------
+    pyam.IamDataFrame
+        Extended Fossil + Biosphere timeseries for this scenario, summing to exactly
+        zero for every year from nz_year through end_year.
+    """
+    bio_data = biosphere_emissions.filter(model=model, scenario=scenario)
+    bio_to_nz = bio_data.filter(year=range(start_year, nz_year + 1))
+
+    if nz_year == end_year:
+        bio_extended = bio_to_nz
+    else:
+        bio_projected = timeproj.LinearExtender().derive_relationship(
+            variable=bio_to_nz.variable,
+            gradient=0,
+            times=range(nz_year + 1, end_year + 1),
+        )(bio_to_nz)
+        bio_extended = pyam.concat([bio_to_nz, bio_projected])
+
+    fossil_data = fossil_emissions.filter(model=model, scenario=scenario)
+    fossil_before_nz = fossil_data.filter(year=range(start_year, nz_year))
+
+    if nz_year == end_year:
+        return pyam.concat([fossil_before_nz, bio_extended])
+
+    bio_held_value = bio_extended.filter(year=nz_year).data["value"].iloc[0]
+    fossil_balanced_ts = fossil_data.timeseries()[
+        [y for y in fossil_data.timeseries().columns if y >= nz_year]
+    ].copy()
+    fossil_balanced_ts.loc[:, :] = -bio_held_value
+    fossil_balanced = pyam.IamDataFrame(fossil_balanced_ts)
+
+    fossil_extended = pyam.concat([fossil_before_nz, fossil_balanced])
+
+    return pyam.concat([fossil_extended, bio_extended])
+
+
+def extend_flatline_netzero_co2(
+    df,
+    fossil_variable,
+    biosphere_variable,
+    aggregate_variable,
+    netzero_meta_column,
+    start_year=2015,
+    end_year=2100,
+    scenario_suffix=None,
+    default_netzero_year=2100,
+    show_progress=True,
+    n_workers=None,
+):
+    """
+    Extend CO2 emissions after net-zero CO2 is reached, holding the *total* at
+    exactly zero - not `extend_flatline_after_netzero`'s general behaviour of
+    independently flat-lining each constituent at its own value (which is correct
+    for NZKyoto, where "hold whatever levels were reached" is the actual intent, but
+    leaves CO2's total persistently nonzero, since `netzero_meta_column` is only
+    "the first year the total is at or below zero", not a true interpolated
+    zero-crossing - no interpolation is needed to fix this, since CO2 is just two
+    same-unit constituents that can be exactly rebalanced against each other).
+
+    From the net-zero year onward: Biosphere CO2 is flat-lined at its own value (same
+    mechanic as `extend_flatline_after_netzero`); Fossil CO2 is set to exactly
+    balance it (`Fossil = -Biosphere`), so total CO2 is exactly zero for every year
+    from the net-zero year through `end_year`.
+
+    Parameters
+    ----------
+    df : pyam.IamDataFrame
+        Input dataframe containing emissions timeseries and net-zero metadata
+    fossil_variable : str
+        Name of the Fossil CO2 variable (e.g., "Emissions|CO2|Fossil")
+    biosphere_variable : str
+        Name of the Biosphere CO2 variable (e.g., "Emissions|CO2|Biosphere")
+    aggregate_variable : str
+        Name of the aggregate CO2 variable (e.g., "Emissions|CO2")
+    netzero_meta_column : str
+        Name of the metadata column containing net-zero crossing years
+    start_year : int, optional
+        Starting year for the output timeseries (default: 2015)
+    end_year : int, optional
+        Ending year for the output timeseries (default: 2100)
+    scenario_suffix : str, optional
+        Suffix to append to scenario names (e.g., "_NZCO2"). If None, original names are kept
+    default_netzero_year : int, optional
+        Default year to use if net-zero metadata is NaN (default: 2100)
+    show_progress : bool, optional
+        Whether to show progress bar (default: True)
+    n_workers : int, optional
+        Number of parallel workers to use. If None, uses all available CPU cores (default: None)
+
+    Returns
+    -------
+    pyam.IamDataFrame
+        DataFrame containing:
+        - Balanced Fossil/Biosphere CO2 variables (extended to end_year, summing to
+          exactly zero from the net-zero year onward)
+        - All other variables from the input (unchanged)
+        - Optionally renamed scenarios if scenario_suffix is provided
+    """
+    if not isinstance(df, pyam.IamDataFrame):
+        raise TypeError(f"df must be a pyam.IamDataFrame, got {type(df).__name__}")
+
+    if netzero_meta_column not in df.meta.columns:
+        raise ValueError(
+            f"Metadata column '{netzero_meta_column}' not found. "
+            f"Available columns: {list(df.meta.columns)}"
+        )
+
+    if df.time_col == "time":
+        df_working = df.swap_time_for_year()
+    else:
+        df_working = df
+
+    co2_variables = [fossil_variable, biosphere_variable]
+    fossil_emissions = df_working.filter(variable=fossil_variable)
+    biosphere_emissions = df_working.filter(variable=biosphere_variable)
+    other_emissions = df_working.filter(variable=co2_variables, keep=False)
+
+    netzero_years = df_working.meta[netzero_meta_column].fillna(default_netzero_year)
+
+    scenarios_to_process = [
+        (index[0], index[1], int(netzero_years.loc[index]))
+        for index, _ in fossil_emissions.meta.iterrows()
+    ]
+
+    extended_co2 = []
+
+    with ThreadPoolExecutor(max_workers=n_workers) as executor:
+        futures = [
+            executor.submit(
+                _process_single_scenario_co2_balanced,
+                model,
+                scenario,
+                fossil_emissions,
+                biosphere_emissions,
+                nz_year,
+                start_year,
+                end_year,
+            )
+            for model, scenario, nz_year in scenarios_to_process
+        ]
+
+        if show_progress:
+            with tqdm(total=len(futures), desc="Processing scenarios (CO2 balanced)") as pbar:
+                for future in as_completed(futures):
+                    result = future.result()
+                    extended_co2.append(result)
+                    pbar.update(1)
+        else:
+            for future in as_completed(futures):
+                result = future.result()
+                extended_co2.append(result)
+
+    flat_lined_co2 = pyam.concat(extended_co2)
+    compiled_emissions = pyam.concat([flat_lined_co2, other_emissions])
+
+    compiled_emissions_no_agg = compiled_emissions.filter(
+        variable=aggregate_variable,
+        keep=False
+    )
+
+    try:
+        compiled_emissions_no_agg.aggregate(
+            variable=aggregate_variable,
+            components=co2_variables,
+            append=True
+        )
+        compiled_emissions = compiled_emissions_no_agg
+    except Exception:
+        compiled_emissions = compiled_emissions_no_agg
+
+    if scenario_suffix:
+        scenario_mapping = {scen: f"{scen}{scenario_suffix}" for scen in compiled_emissions.scenario}
+        compiled_emissions.rename(scenario=scenario_mapping, inplace=True)
+
+    return compiled_emissions
+
+
 def extend_flatline_after_netzero(
     df,
     constituent_variables,
