@@ -3,7 +3,18 @@
 #SBATCH --partition=generic
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
-#SBATCH --time=2-00:00:00
+#SBATCH --time=06:00:00
+# Sized from observed shard runtimes on the real ~1955-scenario/20-shard production
+# run (job 3072453): every shard completed in 2h26m-3h13m for ~98 scenarios/shard, so
+# 6h gives ~3h of headroom over the slowest observed shard. This used to be
+# 2-00:00:00 ("to be safe"), which backfired: SLURM's backfill scheduler favors jobs
+# with realistic (shorter) requested walltimes when slotting into gaps, so an
+# oversized request can queue far longer than the job itself takes to run - a scoped
+# 784-scenario/8-shard rerun (same ~98 scenarios/shard) sat pending for an estimated
+# 14h under the old 2-day request. If a future batch changes the scenarios/shard
+# ratio substantially (much larger BATCH_SIZE, or far fewer/more shards than ~98
+# scenarios each), override with `sbatch --time=...` rather than assuming this default
+# still fits.
 #SBATCH --exclude=compute5
 # compute5 has a broken /apps mount (module loads fail with "unknown module" there
 # even for modules that exist fine on every other generic-partition node) - confirmed
