@@ -2,6 +2,8 @@
 *.csv
 *.xlsx
 *.log
+*.out
+*.err
 *.png
 .DS_Store
 
