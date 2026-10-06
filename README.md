@@ -10,4 +10,4 @@ In order to reproduce the results from beginning to end you need to:
     - start jupyter with uv run jupyter lab
     - run the notebooks and .py scripts in order
 
-Current most up-to-date version of the workflow sits in (PR37)[https://github.com/gaurav-ganti/netzero_assessment/pull/37]
+Current most up-to-date version of the workflow sits in PR[https://github.com/gaurav-ganti/netzero_assessment/pull/37]
