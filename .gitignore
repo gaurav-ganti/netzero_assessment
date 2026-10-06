@@ -247,3 +247,6 @@ notes/
 # Archival figures from the previous submission - all figures are being
 # regenerated for the revision
 analysis/Figures_v1/
+
+# Retired notebooks - superseded, kept locally for reference only
+analysis/retired_*.ipynb
