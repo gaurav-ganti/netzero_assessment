@@ -1,5 +1,4 @@
-This repo provides the codebase to reproduce the results and Figures from the paper 
-
+This repo provides the codebase to reproduce the results and Figures from the paper <br>
 *"Decomposing drivers of global temperature change after net zero."*
 
 <https://iopscience.iop.org/article/10.1088/1748-9326/aebc9e/meta>
