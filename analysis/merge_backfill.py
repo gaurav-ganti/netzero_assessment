@@ -1,0 +1,59 @@
+"""
+Merge locally-backfilled ensemble members (see 303_run_magicc-missing.ipynb's Part B,
+run on a Mac for its far lower MAGICC failure rate) into the cluster's raw
+individual_runs_raw/ output.
+
+Usage (run on the cluster, after untarring the recovered-rows tarball into
+OUTPUT_FOLDER, or any other directory of recovered-row CSVs):
+    uv run python merge_backfill.py [recovered_dir]
+
+recovered_dir defaults to OUTPUT_FOLDER/backfill_recovered if not given.
+"""
+import os
+import sys
+from pathlib import Path
+
+import dotenv
+import pandas as pd
+
+dotenv.load_dotenv()
+OUTPUT_FOLDER = Path(os.environ["OUTPUT_FOLDER"])
+
+recovered_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else OUTPUT_FOLDER / "backfill_recovered"
+raw_dir = OUTPUT_FOLDER / "individual_runs_raw"
+
+recovered_files = sorted(recovered_dir.glob("*.csv"))
+print(f"Found {len(recovered_files)} recovered-row file(s) to merge")
+
+merged_count = 0
+created_count = 0
+
+for recovered_path in recovered_files:
+    output_path = raw_dir / recovered_path.name
+
+    new_rows = pd.read_csv(recovered_path)
+    id_cols = [c for c in new_rows.columns if not c.isdigit()]
+    new_rows = new_rows.set_index(id_cols)
+    new_rows.columns = new_rows.columns.astype(int)
+
+    if not output_path.exists():
+        # A totally-failed (scenario, flag) - 0 members ever succeeded on the
+        # cluster, so no raw file was ever created. The recovered rows *are* the
+        # new file; nothing to merge into.
+        new_rows.sort_index(level="run_id").to_csv(output_path)
+        print(f"  CREATE (no prior raw file): {recovered_path.name} ({len(new_rows)} member(s))")
+        created_count += 1
+        continue
+
+    existing = pd.read_csv(output_path)
+    existing = existing.set_index([c for c in existing.columns if not c.isdigit()])
+    existing.columns = existing.columns.astype(int)
+
+    combined = pd.concat([existing, new_rows])
+    combined = combined[~combined.index.get_level_values("run_id").duplicated(keep="first")]
+    combined = combined.sort_index(level="run_id")
+    combined.to_csv(output_path)
+
+    merged_count += 1
+
+print(f"\nMerged {merged_count} file(s), created {created_count} new file(s) from scratch")
